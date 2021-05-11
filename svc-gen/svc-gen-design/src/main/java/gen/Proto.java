@@ -4,7 +4,7 @@ import cloud.unionj.generator.openapi3.PathConfig;
 import cloud.unionj.generator.openapi3.dsl.IImporter;
 
 import static cloud.unionj.generator.openapi3.PathHelper.post;
-import static gen.Components.UploadFormVO;
+import static cloud.unionj.generator.openapi3.dsl.Schema.schema;
 
 /**
  * @author: created by wubin
@@ -17,7 +17,13 @@ public class Proto implements IImporter {
   public void doImport() {
     post("/upload", PathConfig.builder()
         .summary("上传openapi3.json")
-        .reqSchema(UploadFormVO)
+        .reqSchema(schema(sb -> {
+          sb.type("object");
+          sb.properties("file", schema(file -> {
+            file.type("string");
+            file.format("binary");
+          }));
+        }))
         .reqSchemaType(PathConfig.SchemaType.FORMDATA)
         .respSchemaType(PathConfig.SchemaType.STREAM)
         .build()

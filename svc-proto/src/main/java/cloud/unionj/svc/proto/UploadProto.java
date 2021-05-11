@@ -10,7 +10,7 @@ public interface UploadProto {
 
     @PostMapping("/upload")
     ResponseEntity<byte[]> postUpload(
-        
+        @RequestPart(value="file", required=false) MultipartFile file
     );
 
 }
