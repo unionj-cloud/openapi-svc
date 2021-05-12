@@ -6,11 +6,16 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.*;
 import cloud.unionj.svc.vo.*;
 
-public interface UploadProto {
+public interface TsProto {
 
-    @PostMapping("/upload")
-    ResponseEntity<byte[]> postUpload(
+    @PostMapping("/ts/upload")
+    ResponseEntity<byte[]> postTsUpload(
         @RequestPart(value="file", required=false) MultipartFile file
+    );
+
+    @GetMapping("/ts/url")
+    ResponseEntity<byte[]> getTsUrl(
+        @RequestParam("url") String url
     );
 
 }

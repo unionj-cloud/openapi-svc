@@ -5,7 +5,6 @@ import cloud.unionj.generator.openapi3.model.Openapi3;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -22,12 +21,6 @@ import java.util.TimeZone;
  */
 @SpringBootApplication
 public class FrontendGenApplication implements CommandLineRunner {
-
-  @Value("${designer.phone}")
-  private String designerPhone;
-
-  @Value("${designer.username}")
-  private String designerUsername;
 
   private static Logger LOG = LoggerFactory.getLogger(FrontendGenApplication.class);
 
@@ -52,7 +45,7 @@ public class FrontendGenApplication implements CommandLineRunner {
   @Override
   public void run(String... args) throws Exception {
     Openapi3 openAPI = Openapi3Designer.design();
-    VueProjectGenerator vueProjectGenerator = new VueProjectGenerator.Builder("community-front-pc").openAPI(openAPI).build();
+    VueProjectGenerator vueProjectGenerator = new VueProjectGenerator.Builder("openapi-svc").openAPI(openAPI).build();
     String outputFile = vueProjectGenerator.generate();
     File file = new File(outputFile);
     Assert.assertTrue(file.exists());

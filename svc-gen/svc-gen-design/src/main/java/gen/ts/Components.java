@@ -1,4 +1,4 @@
-package gen;
+package gen.ts;
 
 /**
  * @author: created by wubin

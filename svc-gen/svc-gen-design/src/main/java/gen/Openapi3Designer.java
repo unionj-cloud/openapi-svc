@@ -2,6 +2,7 @@ package gen;
 
 import cloud.unionj.generator.openapi3.dsl.PathHelper;
 import cloud.unionj.generator.openapi3.model.Openapi3;
+import gen.ts.TsProto;
 
 import static cloud.unionj.generator.openapi3.dsl.Openapi3.openapi3;
 import static cloud.unionj.generator.openapi3.dsl.info.Info.info;
@@ -26,7 +27,7 @@ public class Openapi3Designer {
         sb.url("REPLACE WITH YOUR SERVER ADDRESS");
       });
 
-      PathHelper.doImport(Proto.class);
+      PathHelper.doImport(TsProto.class);
     });
     return openapi3;
   }
