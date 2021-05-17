@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>cloud.unionj</groupId>
+    <artifactId>openapi-svc</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <groupId>cloud.unionj</groupId>
+  <artifactId>svc-gen</artifactId>
+  <name>svc-gen</name>
+  <packaging>pom</packaging>
+
+  <properties>
+    <unionj-generator.version>1.5-SNAPSHOT</unionj-generator.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>cloud.unionj</groupId>
+        <artifactId>unionj-generator-frontend</artifactId>
+        <version>${unionj-generator.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>cloud.unionj</groupId>
+        <artifactId>unionj-generator-backend</artifactId>
+        <version>${unionj-generator.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <modules>
+    <module>svc-gen-design</module>
+    <module>svc-gen-backend</module>
+    <module>svc-gen-frontend</module>
+  </modules>
+
+  <repositories>
+    <repository>
+      <id>sonatype-nexus-snapshots</id>
+      <name>Sonatype Nexus Snapshots</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
+      </snapshots>
+    </repository>
+  </repositories>
+
+</project>
