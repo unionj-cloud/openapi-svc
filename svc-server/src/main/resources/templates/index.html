@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>下载ts接口客户端代码</title>
+  <link rel="stylesheet" href="../static/css/bootstrap.min.css" th:href="@{/css/bootstrap.min.css}">
+</head>
+<body>
+<div class="container" style="padding: 40px">
+  <h3>用符合openAPI3 规范的json格式接口文档文件下载ts接口客户端代码</h3>
+  <div style="height: 20px"></div>
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <div class="card-body">
+          <form enctype="multipart/form-data" method="POST" th:action="@{/ts/upload}">
+            <div class="form-group">
+              <input type="file" class="form-control-file" id="file" name="file">
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

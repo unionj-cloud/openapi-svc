@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,6 +37,8 @@ public class ProtoImpl implements TsProto {
     String projectName = StringUtils.stripEnd(file.getOriginalFilename(), ".json");
     try (InputStream is = file.getInputStream()) {
       VueProjectGenerator vueProjectGenerator = new VueProjectGenerator.Builder(projectName).is(is).build();
+      String absolutePath = FileSystems.getDefault().getPath(vueProjectGenerator.getOutputFile()).normalize().toAbsolutePath().toString();
+      FileUtils.forceDelete(new File(absolutePath));
       String outputFile = vueProjectGenerator.generate();
       File output = new File(outputFile);
       byte[] body = FileUtils.readFileToByteArray(output);

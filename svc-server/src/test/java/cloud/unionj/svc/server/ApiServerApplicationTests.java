@@ -1,13 +1,11 @@
 package cloud.unionj.svc.server;
 
+import lombok.SneakyThrows;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
+import java.io.File;
+
 class ApiServerApplicationTests {
-
-  @Test
-  void contextLoads() {
-  }
-
+  
 }
