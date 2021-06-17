@@ -39,13 +39,18 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
 
   @Override
   @SneakyThrows
-  public String generate(MultipartFile openapiJsonFile, String groupId, String artifactId, String version, String name, String invokerPackage, String apiPackage, String modelPackage) {
-    if (openapiJsonFile == null || openapiJsonFile.getSize() == 0) {
-      throw new Exception("无效的openapi文件");
-    }
+  public File generate(InputStream openapiJsonInputStream,
+                       String openapiJsonFileName,
+                       String groupId,
+                       String artifactId,
+                       String version,
+                       String name,
+                       String invokerPackage,
+                       String apiPackage,
+                       String modelPackage) {
     String output = tempRoot + File.separator + new SimpleDateFormat("yyyyMMddHHmmssS").format(new Date());
-    String inputSpec = output + File.separator + openapiJsonFile.getOriginalFilename();
-    FileUtil.writeFromStream(openapiJsonFile.getInputStream(), inputSpec);
+    String inputSpec = output + File.separator + openapiJsonFileName;
+    FileUtil.writeFromStream(openapiJsonInputStream, inputSpec);
     String generatorSourceDir;
     if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
       generatorSourceDir = this.generatorSourceDir.replaceFirst("/", "");
@@ -123,12 +128,13 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
       packageRequest.setGoals(Collections.singletonList("package"));
       InvocationResult execute = invoker.execute(packageRequest);
       if (execute.getExitCode() == 0) {
-        return output + File.separator + "target" + File.separator + artifactId + "-" + version + ".jar";
+        String jarPath = output + File.separator + "target" + File.separator + artifactId + "-" + version + ".jar";
+        return FileUtil.newFile(jarPath);
       }
     }
 
     File zip = ZipUtil.zip(output);
-    return zip.getAbsolutePath();
+    return zip;
   }
 
   private String fillPom(String output, String groupId, String artifactId, String version, String name) {

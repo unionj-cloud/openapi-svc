@@ -7,8 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 public interface JavaProto {
 
   @PostMapping("/java/upload")
-  @ResponseBody
-  String postTsUpload(
+  ResponseEntity<byte[]> postTsUpload(
       @RequestPart(value = "file") MultipartFile file,
       @RequestParam(value = "groupId", required = false) String groupId,
       @RequestParam(value = "artifactId", required = false) String artifactId,
@@ -21,7 +20,14 @@ public interface JavaProto {
 
   @GetMapping("/java/url")
   ResponseEntity<byte[]> getTsUrl(
-      @RequestParam("url") String url
+      @RequestParam("url") String url,
+      @RequestParam(value = "groupId", required = false) String groupId,
+      @RequestParam(value = "artifactId", required = false) String artifactId,
+      @RequestParam(value = "version", required = false) String version,
+      @RequestParam(value = "name", required = false) String name,
+      @RequestParam(value = "invokerPackage", required = false) String invokerPackage,
+      @RequestParam(value = "apiPackage", required = false) String apiPackage,
+      @RequestParam(value = "modelPackage", required = false) String modelPackage
   );
 
 }

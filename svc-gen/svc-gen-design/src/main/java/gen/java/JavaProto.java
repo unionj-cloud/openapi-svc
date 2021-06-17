@@ -14,7 +14,7 @@ public class JavaProto implements IImporter {
   @Override
   public void doImport() {
     post("/java/upload", PathConfig.builder()
-        .summary("通过上传openapi3.json文件生成代码，生成后返回下载地址")
+        .summary("通过上传openapi3.json文件生成代码")
         .reqSchema(schema(sb -> {
           sb.type("object");
           sb.properties("file", schema(file -> {
@@ -38,13 +38,14 @@ public class JavaProto implements IImporter {
     get("/java/url", PathConfig.builder()
         .summary("通过openapi3.json文件的下载地址生成代码")
         .parameters(new Parameter[]{
-            ParameterBuilder.builder()
-                .description("下载地址")
-                .name("url")
-                .in(Parameter.InEnum.QUERY)
-                .required(true)
-                .schema(string)
-                .build()
+            ParameterBuilder.builder().name("url").in(Parameter.InEnum.QUERY).required(true).schema(string).description("下载地址").build(),
+            ParameterBuilder.builder().name("groupId").in(Parameter.InEnum.QUERY).required(false).schema(string).description("groupId，缺省为cloud.unionj").build(),
+            ParameterBuilder.builder().name("artifactId").in(Parameter.InEnum.QUERY).required(false).schema(string).description("artifactId，缺省为generator").build(),
+            ParameterBuilder.builder().name("version").in(Parameter.InEnum.QUERY).required(false).schema(string).description("version，缺省为1.0.0").build(),
+            ParameterBuilder.builder().name("name").in(Parameter.InEnum.QUERY).required(false).schema(string).description("name，缺省为{groupId}-{artifactId}（特殊符号替换为-）").build(),
+            ParameterBuilder.builder().name("invokerPackage").in(Parameter.InEnum.QUERY).required(false).schema(string).description("生成代码的根包完整包名，缺省为{groupId}.{artifactId}").build(),
+            ParameterBuilder.builder().name("apiPackage").in(Parameter.InEnum.QUERY).required(false).schema(string).description("生成api接口代码的相对根包的包名，缺省为client").build(),
+            ParameterBuilder.builder().name("modelPackage").in(Parameter.InEnum.QUERY).required(false).schema(string).description("生成api接口代码的相对根包的包名，缺省为vo").build()
         })
         .respSchemaType(PathConfig.SchemaType.STREAM)
         .build()
