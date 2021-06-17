@@ -31,7 +31,8 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
   private final String generatorSourceDir = JavaGeneratorServiceImpl.class.getClassLoader().getResource("generator").getPath();
   private final String pomTemplateName = "pom-template.xml";
   private final String generatorPomTemplateName = "generator-pom-template.xml";
-  private final String tempRoot = "/tmp";
+  @Value("${tmp.root}")
+  private String tempRoot;
   @Value("${maven.home}")
   private String mavenHome;
   @Value("${svc.java.packageType:zip}")
