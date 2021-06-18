@@ -41,7 +41,7 @@
     <dependency>
       <groupId>cloud.unionj</groupId>
       <artifactId>unionj-generator-frontend</artifactId>
-      <version>1.5-SNAPSHOT</version>
+      <version>1.6-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
 
@@ -49,6 +49,12 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.maven.shared</groupId>
+      <artifactId>maven-invoker</artifactId>
+      <version>3.0.1</version>
     </dependency>
   </dependencies>
 
