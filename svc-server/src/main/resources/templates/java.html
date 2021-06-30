@@ -31,23 +31,23 @@
 
   <div class="collapse navbar-collapse" id="navbarSupportedContent">
     <ul class="navbar-nav mr-auto">
-      <li class="nav-item active">
-        <a class="nav-link" href="/">Typescript <span class="sr-only">(current)</span></a>
-      </li>
       <li class="nav-item">
-        <a class="nav-link" href="/java">Java</a>
+        <a class="nav-link" href="/">Typescript</a>
+      </li>
+      <li class="nav-item active">
+        <a class="nav-link" href="/java">Java <span class="sr-only">(current)</span></a>
       </li>
     </ul>
   </div>
 </nav>
 <div class="container" style="padding: 40px">
-  <h3>用符合openAPI3 规范的json格式接口文档文件下载ts接口客户端代码</h3>
+  <h3>用符合openAPI3 规范的json格式接口文档文件下载java接口客户端代码</h3>
   <div style="height: 20px"></div>
   <div class="row">
     <div class="col">
       <div class="card">
         <div class="card-body">
-          <form enctype="multipart/form-data" method="POST" th:action="@{/ts/upload}"
+          <form enctype="multipart/form-data" method="POST" th:action="@{/java/upload}"
                 class="dropzone"
                 id="my-dropzone">
             <div class="dz-message">可拖拽上传，亦可选择文件上传<br/>Drop files to upload (or click)</div>

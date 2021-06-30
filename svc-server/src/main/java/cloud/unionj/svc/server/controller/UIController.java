@@ -22,4 +22,9 @@ public class UIController {
     public String home(Model model) {
         return "index";
     }
+
+    @GetMapping("java")
+    public String java(Model model) {
+        return "java";
+    }
 }
