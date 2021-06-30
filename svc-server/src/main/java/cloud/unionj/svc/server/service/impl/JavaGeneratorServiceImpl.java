@@ -28,7 +28,6 @@ import java.util.Date;
 @Service
 public class JavaGeneratorServiceImpl implements JavaGeneratorService {
 
-  private final String generatorSourceDir = JavaGeneratorServiceImpl.class.getClassLoader().getResource("generator").getPath();
   private final String pomTemplateName = "pom-template.xml";
   private final String generatorPomTemplateName = "generator-pom-template.xml";
   @Value("${tmp.root}")
@@ -37,6 +36,8 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
   private String mavenHome;
   @Value("${svc.java.packageType:zip}")
   private String packageType;
+  @Value("${generator.source.dir}")
+  private String generatorSourceDir;
 
   @Override
   @SneakyThrows
@@ -59,7 +60,6 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
       generatorSourceDir = this.generatorSourceDir;
     }
     Arrays.asList(FileUtil.newFile(generatorSourceDir).listFiles()).forEach(file -> FileUtil.copy(file.getAbsolutePath(), output, true));
-
 
     if (StringUtils.isEmpty(groupId)) {
       groupId = "cloud.unionj";

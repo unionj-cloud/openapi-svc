@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  * date:2021/5/11
  */
 @Controller
-public class ProtoImpl implements TsProto {
+public class TsProtoImpl implements TsProto {
 
   @SneakyThrows
   @Override
