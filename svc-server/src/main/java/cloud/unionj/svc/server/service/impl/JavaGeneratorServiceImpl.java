@@ -1,10 +1,12 @@
 package cloud.unionj.svc.server.service.impl;
 
 import cloud.unionj.svc.server.service.JavaGeneratorService;
-import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.io.resource.ResourceUtil;
-import cn.hutool.core.util.*;
+import cn.hutool.core.util.ReUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.util.XmlUtil;
+import cn.hutool.core.util.ZipUtil;
+import com.google.common.collect.Lists;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.shared.invoker.*;
@@ -12,13 +14,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,7 +32,6 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
   private final String generatorResourceRoot = "/generator";
   private final String pomTemplateName = "pom-template.xml";
   private final String generatorPomTemplateName = "generator-pom-template.xml";
-  private final String javaTemplateDirName = "java-template";
   @Value("${tmp.root}")
   private String tempRoot;
   @Value("${maven.home}")
@@ -42,6 +40,9 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
   private String packageType;
   @Value("${generator.source.dir:}")
   private String generatorSourceDir;
+  @Value("${svc-client-java.version:}")
+  private String svcClientJavaVersion;
+
 
   @Override
   @SneakyThrows
@@ -130,9 +131,6 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
     generateRequest.setGoals(Collections.singletonList("compile"));
     invoker.execute(generateRequest);
 
-    //用invokerPackage的值替换java-template文件夹下所有java文件的${invokerPackage}以保证能正常引用生成的代码，并写入到output中invokerPackage代码所在的目录
-    fillJava(output, invokerPackage);
-
     //删除多余文件和文件夹
     FileUtil.del(output + File.separator + "api");
     FileUtil.del(output + File.separator + "gradle");
@@ -140,9 +138,26 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
     FileUtil.del(output + File.separator + ".openapi-generator");
     FileUtil.del(output + File.separator + ".openapi-generator-ignore");
     FileUtil.del(output + File.separator + "target");
-    FileUtil.del(output + File.separator + javaTemplateDirName);
     //生成代码用的pom文件生成代码后就没用了
     FileUtil.del(outputGeneratorPom);
+
+    //公共代码已经被独立为项目进行改造为生成代码的依赖包，这里删除生成出来的原有的公共代码（被apiPackage和modelPackage包中依赖的除外）
+    File outputJavaDir = FileUtil.newFile(output + (".src.main.java." + invokerPackage).replace(".", File.separator));
+    List<String> remainFileList = Lists.newArrayList(
+        apiPackage.substring(apiPackage.lastIndexOf(".") + 1),
+        modelPackage.substring(modelPackage.lastIndexOf(".") + 1),
+        "CollectionFormats.java",
+        "StringUtil.java"
+    );
+    if (outputJavaDir.exists() && outputJavaDir.isDirectory()) {
+      for (File sub : outputJavaDir.listFiles()) {
+        //只留下apiPackage和modelPackage的代码，另外，CollectionFormats.java被apiPackage中的代码引用，StringUtil.java被CollectionFormats.java引用
+        if (remainFileList.contains(sub.getName())) {
+          continue;
+        }
+        FileUtil.del(sub);
+      }
+    }
 
     //将用户传入的项目信息填充至内置好的pom文件，并生成到output目录下
     String outputPom = fillPom(output, groupId, artifactId, version, name);
@@ -156,10 +171,10 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
     if (StrUtil.equalsIgnoreCase(packageType, "jar")) {
       InvocationRequest packageRequest = new DefaultInvocationRequest();
       packageRequest.setPomFile(new File(outputPom));
-      packageRequest.setGoals(Collections.singletonList("package"));
+      packageRequest.setGoals(Collections.singletonList("clean compile assembly:single -DskipTests"));
       InvocationResult execute = invoker.execute(packageRequest);
       if (execute.getExitCode() == 0) {
-        return FileUtil.newFile(output + File.separator + "target" + File.separator + fileNameWithoutFix + ".jar");
+        return FileUtil.newFile(output + File.separator + "target" + File.separator + fileNameWithoutFix + "-jar-with-dependencies.jar");
       } else {
         //maven打包失败，删除打包生成的target目录
         FileUtil.del(output + File.separator + "target");
@@ -167,14 +182,6 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
     }
     File zip = ZipUtil.zip(output, FileUtil.getParent(output, 1) + File.separator + fileNameWithoutFix + "-generate-" + nowTimeStr + ".zip");
     return zip;
-  }
-
-  private void fillJava(String output, String invokerPackage) {
-    String outputJavaTemplateDir = output + File.separator + javaTemplateDirName;
-    replaceInvokerPackage(FileUtil.newFile(outputJavaTemplateDir), invokerPackage);
-
-    final String outputJavaDir = output + File.separator + "src" + File.separator + "main" + File.separator + "java" + File.separator + invokerPackage.replace(".", File.separator);
-    Arrays.asList(FileUtil.newFile(outputJavaTemplateDir).listFiles()).forEach(file -> FileUtil.copy(file.getAbsolutePath(), outputJavaDir, true));
   }
 
   private void replaceInvokerPackage(File file, String invokerPackage) {
@@ -203,6 +210,10 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
     versionNode.setTextContent(version);
     Node nameNode = document.getElementsByTagName("name").item(0);
     nameNode.setTextContent(name);
+    if (StrUtil.isNotEmpty(svcClientJavaVersion)) {
+      Node inputSpecNode = document.getElementsByTagName("svc-client-java.version").item(0);
+      inputSpecNode.setTextContent(svcClientJavaVersion);
+    }
     String outputPom = output + File.separator + "pom.xml";
     XmlUtil.toFile(document, outputPom);
     FileUtil.del(outputPomTemplate);

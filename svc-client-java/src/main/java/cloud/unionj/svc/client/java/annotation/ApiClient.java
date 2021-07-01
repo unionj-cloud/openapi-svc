@@ -1,4 +1,4 @@
-package ${invokerPackage}.annotation;
+package cloud.unionj.svc.client.java.annotation;
 
 
 import org.springframework.stereotype.Component;

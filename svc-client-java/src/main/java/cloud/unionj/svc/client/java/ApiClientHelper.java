@@ -1,6 +1,6 @@
-package ${invokerPackage};
+package cloud.unionj.svc.client.java;
 
-import ${invokerPackage}.auth.HttpBearerAuth;
+import cloud.unionj.svc.client.java.auth.HttpBearerAuth;
 import okhttp3.Interceptor;
 
 import java.util.LinkedHashMap;

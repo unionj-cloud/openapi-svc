@@ -1,6 +1,6 @@
-package ${invokerPackage}.config;
+package cloud.unionj.svc.client.java.config;
 
-import ${invokerPackage}.ApiClient;
+import cloud.unionj.svc.client.java.ApiClient;
 import okhttp3.Interceptor;
 import retrofit2.Retrofit;
 
