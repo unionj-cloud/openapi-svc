@@ -15,7 +15,8 @@ public interface JavaProto {
       @RequestParam(value = "name", required = false) String name,
       @RequestParam(value = "invokerPackage", required = false) String invokerPackage,
       @RequestParam(value = "apiPackage", required = false) String apiPackage,
-      @RequestParam(value = "modelPackage", required = false) String modelPackage
+      @RequestParam(value = "modelPackage", required = false) String modelPackage,
+      @RequestParam(value = "packageTypes", required = false) String packageTypes
   );
 
   @GetMapping("/java/url")
@@ -27,7 +28,8 @@ public interface JavaProto {
       @RequestParam(value = "name", required = false) String name,
       @RequestParam(value = "invokerPackage", required = false) String invokerPackage,
       @RequestParam(value = "apiPackage", required = false) String apiPackage,
-      @RequestParam(value = "modelPackage", required = false) String modelPackage
+      @RequestParam(value = "modelPackage", required = false) String modelPackage,
+      @RequestParam(value = "packageTypes", required = false) String packageTypes
   );
 
 }

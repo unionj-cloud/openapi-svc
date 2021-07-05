@@ -29,6 +29,7 @@ public class JavaProto implements IImporter {
           sb.properties("invokerPackage", string("生成代码的根包完整包名，缺省为{groupId}.{artifactId}"));
           sb.properties("apiPackage", string("生成api接口代码的相对根包的包名，缺省为client"));
           sb.properties("modelPackage", string("生成api接口代码的相对根包的包名，缺省为vo"));
+          sb.properties("packageTypes", string("打包类型，多个类型之间英文逗号分隔"));
         }))
         .reqSchemaType(PathConfig.SchemaType.FORMDATA)
         .respSchemaType(PathConfig.SchemaType.STREAM)
@@ -45,7 +46,8 @@ public class JavaProto implements IImporter {
             ParameterBuilder.builder().name("name").in(Parameter.InEnum.QUERY).required(false).schema(string).description("name，缺省为{groupId}-{artifactId}（特殊符号替换为-）").build(),
             ParameterBuilder.builder().name("invokerPackage").in(Parameter.InEnum.QUERY).required(false).schema(string).description("生成代码的根包完整包名，缺省为{groupId}.{artifactId}").build(),
             ParameterBuilder.builder().name("apiPackage").in(Parameter.InEnum.QUERY).required(false).schema(string).description("生成api接口代码的相对根包的包名，缺省为client").build(),
-            ParameterBuilder.builder().name("modelPackage").in(Parameter.InEnum.QUERY).required(false).schema(string).description("生成api接口代码的相对根包的包名，缺省为vo").build()
+            ParameterBuilder.builder().name("modelPackage").in(Parameter.InEnum.QUERY).required(false).schema(string).description("生成api接口代码的相对根包的包名，缺省为vo").build(),
+            ParameterBuilder.builder().name("packageTypes").in(Parameter.InEnum.QUERY).required(false).schema(string).description("打包类型，多个类型之间英文逗号分隔").build()
         })
         .respSchemaType(PathConfig.SchemaType.STREAM)
         .build()

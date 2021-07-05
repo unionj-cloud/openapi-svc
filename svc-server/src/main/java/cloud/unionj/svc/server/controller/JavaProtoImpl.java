@@ -1,11 +1,10 @@
 package cloud.unionj.svc.server.controller;
 
 import cloud.unionj.svc.proto.JavaProto;
+import cloud.unionj.svc.server.enums.JavaPackageType;
 import cloud.unionj.svc.server.service.JavaGeneratorService;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.core.util.URLUtil;
-import cn.hutool.extra.spring.SpringUtil;
 import cn.hutool.http.HttpUtil;
 import lombok.SneakyThrows;
 import org.springframework.http.HttpHeaders;
@@ -17,31 +16,49 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.InputStream;
+import java.util.List;
 
 @Controller
 public class JavaProtoImpl implements JavaProto {
 
-  @Override
-  @SneakyThrows
-  public ResponseEntity<byte[]> postJavaUpload(MultipartFile file, String groupId, String artifactId, String version, String name, String invokerPackage, String apiPackage, String modelPackage) {
-    if (file == null || file.getSize() == 0) {
-      throw new Exception("无效文件");
-    }
-    JavaGeneratorService javaGeneratorService = SpringUtil.getBean(JavaGeneratorService.class);
-    File generateFile = javaGeneratorService.generate(file.getInputStream(), file.getOriginalFilename(), groupId, artifactId, version, name, invokerPackage, apiPackage, modelPackage);
-    return fileToResponseEntity(generateFile);
+  private final JavaGeneratorService javaGeneratorService;
+
+  public JavaProtoImpl(JavaGeneratorService javaGeneratorService) {
+    this.javaGeneratorService = javaGeneratorService;
   }
 
   @Override
   @SneakyThrows
-  public ResponseEntity<byte[]> getJavaUrl(String url, String groupId, String artifactId, String version, String name, String invokerPackage, String apiPackage, String modelPackage) {
-    String fileName = StrUtil.subAfter(url, "/", true);
+  public ResponseEntity<byte[]> postJavaUpload(MultipartFile file, String groupId, String artifactId, String version, String name, String invokerPackage, String apiPackage, String modelPackage, String packageTypes) {
+    if (file == null || file.getSize() == 0) {
+      throw new Exception("无效文件");
+    }
+    InputStream inputStream = file.getInputStream();
+    String filename = file.getOriginalFilename();
+    return getResponseEntity(inputStream, filename, groupId, artifactId, version, name, invokerPackage, apiPackage, modelPackage, packageTypes);
+  }
+
+  @Override
+  @SneakyThrows
+  public ResponseEntity<byte[]> getJavaUrl(String url, String groupId, String artifactId, String version, String name, String invokerPackage, String apiPackage, String modelPackage, String packageTypes) {
     byte[] bytes = HttpUtil.downloadBytes(url);
     if (bytes == null || bytes.length == 0) {
       throw new Exception("无效文件");
     }
-    JavaGeneratorService javaGeneratorService = SpringUtil.getBean(JavaGeneratorService.class);
-    File generateFile = javaGeneratorService.generate(new ByteArrayInputStream(bytes), fileName, groupId, artifactId, version, name, invokerPackage, apiPackage, modelPackage);
+    String filename = StrUtil.subAfter(url, "/", true);
+    InputStream inputStream = new ByteArrayInputStream(bytes);
+    return getResponseEntity(inputStream, filename, groupId, artifactId, version, name, invokerPackage, apiPackage, modelPackage, packageTypes);
+  }
+
+
+  private ResponseEntity<byte[]> getResponseEntity(InputStream inputStream, String filename, String groupId, String artifactId, String version, String name, String invokerPackage, String apiPackage, String modelPackage, String packageTypes) {
+    if (StrUtil.isEmpty(packageTypes)) {
+      packageTypes = String.valueOf(JavaPackageType.ORIGIN_ZIP.getValue());
+    }
+    int[] packageTypeArray = StrUtil.splitToInt(packageTypes, ",");
+    List<JavaPackageType> javaPackageTypeList = JavaPackageType.findTypes(packageTypeArray);
+    File generateFile = javaGeneratorService.generate(inputStream, filename, groupId, artifactId, version, name, invokerPackage, apiPackage, modelPackage, javaPackageTypeList);
     return fileToResponseEntity(generateFile);
   }
 

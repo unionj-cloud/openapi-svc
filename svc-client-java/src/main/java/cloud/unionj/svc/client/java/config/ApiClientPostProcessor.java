@@ -1,24 +1,23 @@
-package ${invokerPackage}.config;
+package cloud.unionj.svc.client.java.config;
 
 
-import ${invokerPackage}.annotation.ApiClient;
+import cloud.unionj.svc.client.java.annotation.ApiClient;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
 
-@Component
 public class ApiClientPostProcessor implements BeanPostProcessor {
 
-
-  @Autowired(required = false)
   private ApiClientPool apiClientPool;
 
-  @Autowired(required = false)
   private SimpleApiClientPool simpleApiClientPool;
+
+  public ApiClientPostProcessor(ApiClientPool apiClientPool, SimpleApiClientPool simpleApiClientPool) {
+    this.apiClientPool = apiClientPool;
+    this.simpleApiClientPool = simpleApiClientPool;
+  }
 
   //bean初始化之前要调用的方法，这里直接返回
   public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {

@@ -1,13 +1,11 @@
 package cloud.unionj.svc.server.service.impl;
 
+import cloud.unionj.svc.server.enums.JavaPackageType;
 import cloud.unionj.svc.server.service.JavaGeneratorService;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.ReUtil;
-import cn.hutool.core.util.StrUtil;
-import cn.hutool.core.util.XmlUtil;
-import cn.hutool.core.util.ZipUtil;
+import cn.hutool.core.util.*;
 import com.google.common.collect.Lists;
-import lombok.SneakyThrows;
+import lombok.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.shared.invoker.*;
 import org.slf4j.Logger;
@@ -45,7 +43,6 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
 
 
   @Override
-  @SneakyThrows
   public File generate(InputStream openapiJsonInputStream,
                        String openapiJsonFileName,
                        String groupId,
@@ -54,12 +51,47 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
                        String name,
                        String invokerPackage,
                        String apiPackage,
-                       String modelPackage) {
+                       String modelPackage,
+                       List<JavaPackageType> packageTypes) {
     String outputRoot = tempRoot.replaceAll("[\\/|\\\\]+", ReUtil.escape(File.separator));
     String nowTimeStr = new SimpleDateFormat("yyyyMMddHHmmssS").format(new Date());
     String output = outputRoot + (outputRoot.endsWith(File.separator) ? "" : File.separator) + nowTimeStr;
     String inputSpec = output + File.separator + openapiJsonFileName;
-    FileUtil.writeFromStream(openapiJsonInputStream, inputSpec);
+
+    try {
+      FileUtil.writeFromStream(openapiJsonInputStream, inputSpec);
+
+      //1、复制模版文件到输出目录
+      copyTemplates(output);
+
+      //2、校验和初始化入参
+      JavaGeneratorParam generatorParam = new JavaGeneratorParam(output, inputSpec, groupId, artifactId, version, name, invokerPackage, apiPackage, modelPackage, packageTypes);
+      generatorParam.init();
+
+      //3、填充模版并生成代码
+      generateCode(generatorParam);
+
+      List<File> resultFilePathList = new ArrayList<>();
+      for (JavaPackageType packageType : packageTypes) {
+        File resultFile = doPackage(packageType, output, generatorParam.getFileNamePrefix());
+        resultFilePathList.add(resultFile);
+      }
+
+      File result = ZipUtil.zip(
+          FileUtil.newFile(outputRoot + File.separator + generatorParam.getFileNamePrefix() + "-" + nowTimeStr + ".zip"),
+          false,
+          resultFilePathList.toArray(new File[resultFilePathList.size()])
+      );
+      return result;
+    } catch (Exception e) {
+      log.error("JAVA代码生成失败！", e);
+      return null;
+    } finally {
+      FileUtil.del(output);
+    }
+  }
+
+  private void copyTemplates(String output) throws IOException {
     //如果配置了generator资源文件目录，则从配置的路径读取文件
     if (StrUtil.isNotEmpty(generatorSourceDir)) {
       Arrays.asList(FileUtil.newFile(generatorSourceDir).listFiles()).forEach(file -> FileUtil.copy(file.getAbsolutePath(), output, true));
@@ -84,68 +116,170 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
         }
       });
     }
+  }
 
-    if (StringUtils.isEmpty(groupId)) {
-      groupId = "cloud.unionj";
-    }
-    //groupId只允许数字、字母、横杠、点
-    groupId = groupId.replaceAll("[^A-Za-z0-9\\-\\.]", ".");
-    if (StringUtils.isEmpty(artifactId)) {
-      artifactId = "generator";
-    }
-    //artifactId只允许数字、字母、横杠
-    artifactId = artifactId.replaceAll("[^A-Za-z0-9\\-]", "-");
-    if (StringUtils.isEmpty(version)) {
-      version = "1.0.0";
-    }
-    //version只允许数字、字母、下划线、横杠、点
-    version = version.replaceAll("[^A-Za-z0-9\\-_\\.]", ".");
-    if (StringUtils.isEmpty(name)) {
-      name = groupId + "-" + artifactId;
-    }
-    //name只允许数字、字母、横杠
-    name = name.replaceAll("[^A-Za-z0-9\\-]", "-");
-    if (StringUtils.isEmpty(invokerPackage)) {
-      invokerPackage = groupId + "." + artifactId;
-    }
-    //invokerPackage只允许数字、字母、下划线、点
-    invokerPackage = invokerPackage.replaceAll("[^A-Za-z0-9_\\.]", ".");
-    if (StringUtils.isEmpty(apiPackage)) {
-      apiPackage = invokerPackage + ".client";
-    }
-    //apiPackage只允许数字、字母、下划线、点
-    apiPackage = apiPackage.replaceAll("[^A-Za-z0-9_\\.]", ".");
-    if (StringUtils.isEmpty(modelPackage)) {
-      modelPackage = invokerPackage + ".vo";
-    }
-    //modelPackage只允许数字、字母、下划线、点
-    modelPackage = modelPackage.replaceAll("[^A-Za-z0-9_\\.]", ".");
+  private File doPackage(JavaPackageType packageType, String output, String fileNamePrefix) throws MavenInvocationException {
 
-    String outputGeneratorPom = fillGeneratorPom(inputSpec, output, invokerPackage, apiPackage, modelPackage);
+    String dirName = packageType.getName();
+    String mvnGoal;
+    String pomName;
+    String[] includePrefixes;
+    String[] excludePrefixes;
 
+    switch (packageType) {
+      case SIMPLE_JAR:
+        includePrefixes = new String[]{
+            "src",
+            "pom.xml"
+        };
+        excludePrefixes = new String[]{
+            "src.main.java.cloud.unionj.svc.client.java".replace(".", File.separator),
+            "src.main.resources.META-INF".replace(".", File.separator)
+        };
+        mvnGoal = "clean package -DskipTests";
+        pomName = "pom.xml";
+        break;
+      case SIMPLE_SOURCE_JAR:
+        includePrefixes = new String[]{
+            "src",
+            "pom.xml"
+        };
+        excludePrefixes = new String[]{
+            "src.main.java.cloud.unionj.svc.client.java".replace(".", File.separator),
+            "src.main.resources.META-INF".replace(".", File.separator)
+        };
+        mvnGoal = "source:jar";
+        pomName = "pom.xml";
+        break;
+      case SIMPLE_FAT_JAR:
+        includePrefixes = new String[]{
+            "src",
+            "pom.xml"
+        };
+        excludePrefixes = new String[]{
+            "src.main.java.cloud.unionj.svc.client.java".replace(".", File.separator),
+            "src.main.resources.META-INF".replace(".", File.separator)
+        };
+        mvnGoal = "clean compile assembly:single -DskipTests";
+        pomName = "pom.xml";
+        break;
+      case FULL_JAR:
+        includePrefixes = new String[]{
+            "src",
+            "pom.xml"
+        };
+        excludePrefixes = null;
+        mvnGoal = "clean package -DskipTests";
+        pomName = "pom.xml";
+        break;
+      case FULL_SOURCE_JAR:
+        includePrefixes = new String[]{
+            "src",
+            "pom.xml"
+        };
+        excludePrefixes = null;
+        mvnGoal = "source:jar";
+        pomName = "pom.xml";
+        break;
+      case FULL_FAT_JAR:
+        includePrefixes = new String[]{
+            "src",
+            "pom.xml"
+        };
+        excludePrefixes = null;
+        mvnGoal = "clean compile assembly:single -DskipTests";
+        pomName = "pom.xml";
+        break;
+      case ORIGIN_ZIP:
+        includePrefixes = new String[]{
+            "src",
+            "docs",
+            "pom.xml"
+        };
+        excludePrefixes = null;
+        mvnGoal = null;
+        pomName = null;
+        break;
+      default:
+        return null;
+    }
+    log.info("开始打包：" + packageType.getName());
+    String dirPath = output + File.separator + dirName;
+
+    copyFiles(output, dirPath, null, includePrefixes, excludePrefixes);
+
+    String resultFilePath = output + File.separator + fileNamePrefix + (StrUtil.isNotEmpty(packageType.getInfix()) ? packageType.getInfix() : "") + packageType.getSuffix();
+    if (StrUtil.isNotEmpty(mvnGoal) && StrUtil.isNotEmpty(pomName)) {
+      Invoker invoker = new DefaultInvoker();
+      invoker.setMavenHome(FileUtil.newFile(mavenHome));
+      InvocationRequest request = new DefaultInvocationRequest();
+      request.setPomFile(new File(dirPath + File.separator + pomName));
+      request.setGoals(Collections.singletonList(mvnGoal));
+      request.setQuiet(true);
+      invoker.execute(request);
+      FileUtil.copy(
+          FileUtil.newFile(dirPath + File.separator + "target" + File.separator + fileNamePrefix + packageType.getSuffix()),
+          FileUtil.newFile(resultFilePath),
+          true);
+    } else {
+      ZipUtil.zip(dirPath, resultFilePath, false);
+    }
+    FileUtil.del(dirPath);
+    log.info("完成打包：" + packageType.getName());
+    return FileUtil.newFile(resultFilePath);
+  }
+
+  private void copyFiles(String sourcePath, String targetPath, String relativePath, String[] includePrefixes, String[] excludePrefixes) {
+    String sourceAbsolutePath;
+    if (StrUtil.isEmpty(relativePath)) {
+      relativePath = new String();
+      sourceAbsolutePath = sourcePath;
+    } else {
+      sourceAbsolutePath = sourcePath + File.separator + relativePath;
+    }
+
+    File file = FileUtil.newFile(sourceAbsolutePath);
+    if (!file.isDirectory()) {
+      if (includePrefixes != null && !StrUtil.startWithAny(relativePath, includePrefixes)) {
+        return;
+      }
+      FileUtil.copy(sourceAbsolutePath, targetPath + File.separator + relativePath, true);
+      return;
+    }
+    for (File subFile : file.listFiles()) {
+      if (excludePrefixes != null && StrUtil.startWithAny(relativePath, excludePrefixes)) {
+        continue;
+      }
+      copyFiles(sourcePath, targetPath, (StrUtil.isEmpty(relativePath) ? "" : (relativePath + File.separator)) + subFile.getName(), includePrefixes, excludePrefixes);
+    }
+  }
+
+  private void generateCode(JavaGeneratorParam param) throws MavenInvocationException {
     Invoker invoker = new DefaultInvoker();
     invoker.setMavenHome(FileUtil.newFile(mavenHome));
 
-    InvocationRequest generateRequest = new DefaultInvocationRequest();
-    generateRequest.setPomFile(new File(outputGeneratorPom));
-    generateRequest.setGoals(Collections.singletonList("compile"));
-    invoker.execute(generateRequest);
+    String outputGeneratorPom = fillGeneratorPom(param.openapiFilePath, param.output, param.invokerPackage, param.apiPackage, param.modelPackage);
+    InvocationRequest request = new DefaultInvocationRequest();
+    request.setPomFile(new File(outputGeneratorPom));
+    request.setQuiet(true);
+    request.setGoals(Collections.singletonList("compile"));
+    invoker.execute(request);
 
     //删除多余文件和文件夹
-    FileUtil.del(output + File.separator + "api");
-    FileUtil.del(output + File.separator + "gradle");
-    FileUtil.del(output + File.separator + "mustache");
-    FileUtil.del(output + File.separator + ".openapi-generator");
-    FileUtil.del(output + File.separator + ".openapi-generator-ignore");
-    FileUtil.del(output + File.separator + "target");
+    FileUtil.del(param.output + File.separator + "api");
+    FileUtil.del(param.output + File.separator + "gradle");
+    FileUtil.del(param.output + File.separator + "mustache");
+    FileUtil.del(param.output + File.separator + ".openapi-generator");
+    FileUtil.del(param.output + File.separator + ".openapi-generator-ignore");
+    FileUtil.del(param.output + File.separator + "target");
     //生成代码用的pom文件生成代码后就没用了
     FileUtil.del(outputGeneratorPom);
 
-    //公共代码已经被独立为项目进行改造为生成代码的依赖包，这里删除生成出来的原有的公共代码（被apiPackage和modelPackage包中依赖的除外）
-    File outputJavaDir = FileUtil.newFile(output + (".src.main.java." + invokerPackage).replace(".", File.separator));
+    //删除原有的由openapi-generator提供的公共代码
+    File outputJavaDir = FileUtil.newFile(param.output + (".src.main.java." + param.invokerPackage).replace(".", File.separator));
     List<String> remainFileList = Lists.newArrayList(
-        apiPackage.substring(apiPackage.lastIndexOf(".") + 1),
-        modelPackage.substring(modelPackage.lastIndexOf(".") + 1),
+        param.apiPackage.substring(param.apiPackage.lastIndexOf(".") + 1),
+        param.modelPackage.substring(param.modelPackage.lastIndexOf(".") + 1),
         "CollectionFormats.java",
         "StringUtil.java"
     );
@@ -159,44 +293,13 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
       }
     }
 
+    //将模板已内置好的公共代码剪切到生成代码后的源码目录
+    FileUtil.copy(param.output + File.separator + "core" + File.separator + "src", param.output, true);
+
+    FileUtil.del(param.output + File.separator + "core");
+
     //将用户传入的项目信息填充至内置好的pom文件，并生成到output目录下
-    String outputPom = fillPom(output, groupId, artifactId, version, name);
-
-    if (!StrUtil.equalsAnyIgnoreCase(packageType, "jar", "zip")) {
-      packageType = "zip";
-    }
-
-    String fileNameWithoutFix = artifactId + "-" + version;
-
-    if (StrUtil.equalsIgnoreCase(packageType, "jar")) {
-      InvocationRequest packageRequest = new DefaultInvocationRequest();
-      packageRequest.setPomFile(new File(outputPom));
-      packageRequest.setGoals(Collections.singletonList("clean compile assembly:single -DskipTests"));
-      InvocationResult execute = invoker.execute(packageRequest);
-      if (execute.getExitCode() == 0) {
-        return FileUtil.newFile(output + File.separator + "target" + File.separator + fileNameWithoutFix + "-jar-with-dependencies.jar");
-      } else {
-        //maven打包失败，删除打包生成的target目录
-        FileUtil.del(output + File.separator + "target");
-      }
-    }
-    File zip = ZipUtil.zip(output, FileUtil.getParent(output, 1) + File.separator + fileNameWithoutFix + "-generate-" + nowTimeStr + ".zip");
-    return zip;
-  }
-
-  private void replaceInvokerPackage(File file, String invokerPackage) {
-    if (FileUtil.isDirectory(file)) {
-      for (File subFile : file.listFiles()) {
-        replaceInvokerPackage(subFile, invokerPackage);
-      }
-    } else {
-      String content = FileUtil.readUtf8String(file);
-      if (StrUtil.isEmpty(content) || !content.contains("${invokerPackage}")) {
-        return;
-      }
-      String newContent = content.replace("${invokerPackage}", invokerPackage);
-      FileUtil.writeUtf8String(newContent, file);
-    }
+    fillPom(param.output, param.groupId, param.artifactId, param.version, param.name);
   }
 
   private String fillPom(String output, String groupId, String artifactId, String version, String name) {
@@ -220,7 +323,8 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
     return outputPom;
   }
 
-  private String fillGeneratorPom(String inputSpec, String output, String invokerPackage, String apiPackage, String modelPackage) {
+  private String fillGeneratorPom(String inputSpec, String output, String invokerPackage, String apiPackage, String
+      modelPackage) {
     String outputGeneratorPomTemplate = output + File.separator + generatorPomTemplateName;
     Document document = XmlUtil.readXML(outputGeneratorPomTemplate);
     Node inputSpecNode = document.getElementsByTagName("generator.inputSpec").item(0);
@@ -235,5 +339,63 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
     XmlUtil.toFile(document, outputGeneratorPom);
     FileUtil.del(outputGeneratorPomTemplate);
     return outputGeneratorPom;
+  }
+
+  @Getter
+  @Setter
+  @AllArgsConstructor
+  public class JavaGeneratorParam {
+    String output;
+    String openapiFilePath;
+    String groupId;
+    String artifactId;
+    String version;
+    String name;
+    String invokerPackage;
+    String apiPackage;
+    String modelPackage;
+    List<JavaPackageType> packageTypes;
+
+    public void init() {
+      if (StringUtils.isEmpty(this.groupId)) {
+        this.groupId = "cloud.unionj";
+      }
+      //groupId只允许数字、字母、横杠、点
+      this.groupId = this.groupId.replaceAll("[^A-Za-z0-9\\-\\.]", ".");
+      if (StringUtils.isEmpty(this.artifactId)) {
+        this.artifactId = "generator";
+      }
+      //artifactId只允许数字、字母、横杠
+      this.artifactId = this.artifactId.replaceAll("[^A-Za-z0-9\\-]", "-");
+      if (StringUtils.isEmpty(this.version)) {
+        this.version = "1.0.0";
+      }
+      //version只允许数字、字母、下划线、横杠、点
+      this.version = this.version.replaceAll("[^A-Za-z0-9\\-_\\.]", ".");
+      if (StringUtils.isEmpty(this.name)) {
+        this.name = this.groupId + "-" + this.artifactId;
+      }
+      //name只允许数字、字母、横杠
+      this.name = this.name.replaceAll("[^A-Za-z0-9\\-]", "-");
+      if (StringUtils.isEmpty(this.invokerPackage)) {
+        this.invokerPackage = this.groupId + "." + this.artifactId;
+      }
+      //invokerPackage只允许数字、字母、下划线、点
+      this.invokerPackage = this.invokerPackage.replaceAll("[^A-Za-z0-9_\\.]", ".");
+      if (StringUtils.isEmpty(this.apiPackage)) {
+        this.apiPackage = this.invokerPackage + ".client";
+      }
+      //apiPackage只允许数字、字母、下划线、点
+      this.apiPackage = this.apiPackage.replaceAll("[^A-Za-z0-9_\\.]", ".");
+      if (StringUtils.isEmpty(this.modelPackage)) {
+        this.modelPackage = this.invokerPackage + ".vo";
+      }
+      //modelPackage只允许数字、字母、下划线、点
+      this.modelPackage = this.modelPackage.replaceAll("[^A-Za-z0-9_\\.]", ".");
+    }
+
+    public String getFileNamePrefix() {
+      return artifactId + "-" + version;
+    }
   }
 }

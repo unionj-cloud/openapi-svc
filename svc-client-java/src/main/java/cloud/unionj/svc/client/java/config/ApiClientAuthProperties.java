@@ -1,4 +1,4 @@
-package ${invokerPackage}.config;
+package cloud.unionj.svc.client.java.config;
 
 import okhttp3.Interceptor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
