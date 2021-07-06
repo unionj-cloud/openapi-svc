@@ -34,12 +34,8 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
   private String tempRoot;
   @Value("${maven.home}")
   private String mavenHome;
-  @Value("${svc.java.packageType:zip}")
-  private String packageType;
   @Value("${generator.source.dir:}")
   private String generatorSourceDir;
-  @Value("${svc-client-java.version:}")
-  private String svcClientJavaVersion;
 
 
   @Override
@@ -232,10 +228,6 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
     versionNode.setTextContent(version);
     Node nameNode = document.getElementsByTagName("name").item(0);
     nameNode.setTextContent(name);
-    if (StrUtil.isNotEmpty(svcClientJavaVersion)) {
-      Node inputSpecNode = document.getElementsByTagName("svc-client-java.version").item(0);
-      inputSpecNode.setTextContent(svcClientJavaVersion);
-    }
     String outputPom = output + File.separator + "pom.xml";
     XmlUtil.toFile(document, outputPom);
     FileUtil.del(outputPomTemplate);

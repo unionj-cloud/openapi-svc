@@ -55,11 +55,6 @@
             <artifactId>spring-boot</artifactId>
             <version>2.5.2</version>
         </dependency>
-        <dependency>
-            <groupId>cloud.unionj</groupId>
-            <artifactId>svc-client-java</artifactId>
-            <version>${svc-client-java.version}</version>
-        </dependency>
     </dependencies>
 
     <build>
