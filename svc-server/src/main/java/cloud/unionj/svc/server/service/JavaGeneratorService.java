@@ -1,9 +1,10 @@
 package cloud.unionj.svc.server.service;
 
-import org.springframework.web.multipart.MultipartFile;
+import cloud.unionj.svc.server.enums.JavaPackageType;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.Collection;
 
 public interface JavaGeneratorService {
   /**
@@ -16,6 +17,7 @@ public interface JavaGeneratorService {
    * @param invokerPackage         生成代码的根包完整包名，缺省为{groupId}.{artifactId}
    * @param apiPackage             生成api接口代码的相对根包的包名，缺省为client
    * @param modelPackage           生成api接口代码的相对根包的包名，缺省为vo
+   * @param packageTypes           打包类型，枚举列表
    * @return
    */
   File generate(InputStream openapiJsonInputStream,
@@ -26,6 +28,7 @@ public interface JavaGeneratorService {
                 String name,
                 String invokerPackage,
                 String apiPackage,
-                String modelPackage
+                String modelPackage,
+                Collection<JavaPackageType> packageTypes
   );
 }
