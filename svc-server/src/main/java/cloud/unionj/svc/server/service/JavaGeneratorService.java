@@ -1,11 +1,10 @@
 package cloud.unionj.svc.server.service;
 
 import cloud.unionj.svc.server.enums.JavaPackageType;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.InputStream;
-import java.util.List;
+import java.util.Collection;
 
 public interface JavaGeneratorService {
   /**
@@ -30,6 +29,6 @@ public interface JavaGeneratorService {
                 String invokerPackage,
                 String apiPackage,
                 String modelPackage,
-                List<JavaPackageType> packageTypes
+                Collection<JavaPackageType> packageTypes
   );
 }

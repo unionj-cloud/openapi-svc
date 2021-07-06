@@ -6,6 +6,7 @@ import cloud.unionj.svc.server.service.JavaGeneratorService;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
+import com.google.common.collect.Sets;
 import lombok.SneakyThrows;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -64,7 +66,7 @@ public class JavaProtoImpl implements JavaProto {
     }
     String[] packageTypeArray = StrUtil.split(packageTypes, ",");
     List<JavaPackageType> javaPackageTypeList = JavaPackageType.find(packageTypeArray);
-    File generateFile = javaGeneratorService.generate(inputStream, filename, groupId, artifactId, version, name, invokerPackage, apiPackage, modelPackage, javaPackageTypeList);
+    File generateFile = javaGeneratorService.generate(inputStream, filename, groupId, artifactId, version, name, invokerPackage, apiPackage, modelPackage, Sets.newLinkedHashSet(javaPackageTypeList));
     return fileToResponseEntity(generateFile);
   }
 

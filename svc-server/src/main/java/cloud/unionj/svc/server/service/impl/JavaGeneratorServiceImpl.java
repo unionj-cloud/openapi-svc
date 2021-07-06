@@ -52,7 +52,7 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
                        String invokerPackage,
                        String apiPackage,
                        String modelPackage,
-                       List<JavaPackageType> packageTypes) {
+                       Collection<JavaPackageType> packageTypes) {
     String outputRoot = tempRoot.replaceAll("[\\/|\\\\]+", ReUtil.escape(File.separator));
     String nowTimeStr = new SimpleDateFormat("yyyyMMddHHmmssS").format(new Date());
     String output = outputRoot + (outputRoot.endsWith(File.separator) ? "" : File.separator) + nowTimeStr;
@@ -121,100 +121,18 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
   private File doPackage(JavaPackageType packageType, String output, String fileNamePrefix) throws MavenInvocationException {
 
     String dirName = packageType.getName();
-    String mvnGoal;
-    String pomName;
-    String[] includePrefixes;
-    String[] excludePrefixes;
-
-    switch (packageType) {
-      case SIMPLE_JAR:
-        includePrefixes = new String[]{
-            "src",
-            "pom.xml"
-        };
-        excludePrefixes = new String[]{
-            "src.main.java.cloud.unionj.svc.client.java".replace(".", File.separator),
-            "src.main.resources.META-INF".replace(".", File.separator)
-        };
-        mvnGoal = "clean package -DskipTests";
-        pomName = "pom.xml";
-        break;
-      case SIMPLE_SOURCE_JAR:
-        includePrefixes = new String[]{
-            "src",
-            "pom.xml"
-        };
-        excludePrefixes = new String[]{
-            "src.main.java.cloud.unionj.svc.client.java".replace(".", File.separator),
-            "src.main.resources.META-INF".replace(".", File.separator)
-        };
-        mvnGoal = "source:jar";
-        pomName = "pom.xml";
-        break;
-      case SIMPLE_FAT_JAR:
-        includePrefixes = new String[]{
-            "src",
-            "pom.xml"
-        };
-        excludePrefixes = new String[]{
-            "src.main.java.cloud.unionj.svc.client.java".replace(".", File.separator),
-            "src.main.resources.META-INF".replace(".", File.separator)
-        };
-        mvnGoal = "clean compile assembly:single -DskipTests";
-        pomName = "pom.xml";
-        break;
-      case FULL_JAR:
-        includePrefixes = new String[]{
-            "src",
-            "pom.xml"
-        };
-        excludePrefixes = null;
-        mvnGoal = "clean package -DskipTests";
-        pomName = "pom.xml";
-        break;
-      case FULL_SOURCE_JAR:
-        includePrefixes = new String[]{
-            "src",
-            "pom.xml"
-        };
-        excludePrefixes = null;
-        mvnGoal = "source:jar";
-        pomName = "pom.xml";
-        break;
-      case FULL_FAT_JAR:
-        includePrefixes = new String[]{
-            "src",
-            "pom.xml"
-        };
-        excludePrefixes = null;
-        mvnGoal = "clean compile assembly:single -DskipTests";
-        pomName = "pom.xml";
-        break;
-      case ORIGIN_ZIP:
-        includePrefixes = new String[]{
-            "src",
-            "docs",
-            "pom.xml"
-        };
-        excludePrefixes = null;
-        mvnGoal = null;
-        pomName = null;
-        break;
-      default:
-        return null;
-    }
     log.info("开始打包：" + packageType.getName());
     String dirPath = output + File.separator + dirName;
 
-    copyFiles(output, dirPath, null, includePrefixes, excludePrefixes);
+    copyFiles(output, dirPath, null, packageType.getIncludePrefixes(), packageType.getExcludePrefixes());
 
     String resultFilePath = output + File.separator + fileNamePrefix + (StrUtil.isNotEmpty(packageType.getInfix()) ? packageType.getInfix() : "") + packageType.getSuffix();
-    if (StrUtil.isNotEmpty(mvnGoal) && StrUtil.isNotEmpty(pomName)) {
+    if (packageType.isMavenInvoker()) {
       Invoker invoker = new DefaultInvoker();
       invoker.setMavenHome(FileUtil.newFile(mavenHome));
       InvocationRequest request = new DefaultInvocationRequest();
-      request.setPomFile(new File(dirPath + File.separator + pomName));
-      request.setGoals(Collections.singletonList(mvnGoal));
+      request.setPomFile(new File(dirPath + File.separator + "pom.xml"));
+      request.setGoals(Collections.singletonList(packageType.getMvnGoal()));
       request.setQuiet(true);
       invoker.execute(request);
       FileUtil.copy(
@@ -223,6 +141,7 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
           true);
     } else {
       ZipUtil.zip(dirPath, resultFilePath, false);
+
     }
     FileUtil.del(dirPath);
     log.info("完成打包：" + packageType.getName());
@@ -354,7 +273,7 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
     String invokerPackage;
     String apiPackage;
     String modelPackage;
-    List<JavaPackageType> packageTypes;
+    Collection<JavaPackageType> packageTypes;
 
     public void init() {
       if (StringUtils.isEmpty(this.groupId)) {
