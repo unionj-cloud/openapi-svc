@@ -4,6 +4,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Map;
+
 public interface JavaProto {
 
   @PostMapping("/java/upload")
@@ -32,4 +34,7 @@ public interface JavaProto {
       @RequestParam(value = "packageTypes", required = false) String packageTypes
   );
 
+  @GetMapping("/java/packageTypes")
+  @ResponseBody
+  Map<String, String> getPackageTypes();
 }

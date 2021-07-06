@@ -18,6 +18,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 public class JavaProtoImpl implements JavaProto {
@@ -51,18 +52,26 @@ public class JavaProtoImpl implements JavaProto {
     return getResponseEntity(inputStream, filename, groupId, artifactId, version, name, invokerPackage, apiPackage, modelPackage, packageTypes);
   }
 
+  @Override
+  public Map<String, String> getPackageTypes() {
+    return JavaPackageType.getMap();
+  }
+
 
   private ResponseEntity<byte[]> getResponseEntity(InputStream inputStream, String filename, String groupId, String artifactId, String version, String name, String invokerPackage, String apiPackage, String modelPackage, String packageTypes) {
     if (StrUtil.isEmpty(packageTypes)) {
-      packageTypes = String.valueOf(JavaPackageType.ORIGIN_ZIP.getValue());
+      packageTypes = String.valueOf(JavaPackageType.ORIGIN_ZIP.getName());
     }
-    int[] packageTypeArray = StrUtil.splitToInt(packageTypes, ",");
-    List<JavaPackageType> javaPackageTypeList = JavaPackageType.findTypes(packageTypeArray);
+    String[] packageTypeArray = StrUtil.split(packageTypes, ",");
+    List<JavaPackageType> javaPackageTypeList = JavaPackageType.find(packageTypeArray);
     File generateFile = javaGeneratorService.generate(inputStream, filename, groupId, artifactId, version, name, invokerPackage, apiPackage, modelPackage, javaPackageTypeList);
     return fileToResponseEntity(generateFile);
   }
 
   private ResponseEntity<byte[]> fileToResponseEntity(File file) {
+    if (file == null) {
+      return ResponseEntity.ok(new byte[0]);
+    }
     HttpHeaders headers = new HttpHeaders();
     headers.setContentDispositionFormData("attachment", file.getName());
     headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
