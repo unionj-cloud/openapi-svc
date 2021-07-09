@@ -3,9 +3,14 @@ package cloud.unionj.svc.server.service.impl;
 import cloud.unionj.svc.server.enums.JavaPackageType;
 import cloud.unionj.svc.server.service.JavaGeneratorService;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.*;
+import cn.hutool.core.util.ReUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.util.XmlUtil;
+import cn.hutool.core.util.ZipUtil;
 import com.google.common.collect.Lists;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.shared.invoker.*;
 import org.slf4j.Logger;
@@ -126,6 +131,7 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
 
     copyFiles(output, dirPath, null, packageType.getIncludePrefixes(), packageType.getExcludePrefixes());
 
+    FileUtil.mkdir(output);
     String resultFilePath = output + File.separator + fileNamePrefix + (StrUtil.isNotEmpty(packageType.getInfix()) ? packageType.getInfix() : "") + packageType.getSuffix();
     if (packageType.isMavenInvoker()) {
       Invoker invoker = new DefaultInvoker();
@@ -133,8 +139,8 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
       InvocationRequest request = new DefaultInvocationRequest();
       request.setPomFile(new File(dirPath + File.separator + "pom.xml"));
       request.setGoals(Collections.singletonList(packageType.getMvnGoal()));
-      request.setQuiet(true);
       invoker.execute(request);
+      FileUtil.mkdir(dirPath + File.separator + "target");
       FileUtil.copy(
           FileUtil.newFile(dirPath + File.separator + "target" + File.separator + fileNamePrefix + packageType.getSuffix()),
           FileUtil.newFile(resultFilePath),
@@ -180,7 +186,6 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
     String outputGeneratorPom = fillGeneratorPom(param.openapiFilePath, param.output, param.invokerPackage, param.apiPackage, param.modelPackage);
     InvocationRequest request = new DefaultInvocationRequest();
     request.setPomFile(new File(outputGeneratorPom));
-    request.setQuiet(true);
     request.setGoals(Collections.singletonList("compile"));
     invoker.execute(request);
 
