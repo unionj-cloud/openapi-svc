@@ -3,9 +3,14 @@ package cloud.unionj.svc.server.service.impl;
 import cloud.unionj.svc.server.enums.JavaPackageType;
 import cloud.unionj.svc.server.service.JavaGeneratorService;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.*;
+import cn.hutool.core.util.ReUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.util.XmlUtil;
+import cn.hutool.core.util.ZipUtil;
 import com.google.common.collect.Lists;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.shared.invoker.*;
 import org.slf4j.Logger;
@@ -134,17 +139,21 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
       if (settingsXml.exists()) {
         request.setUserSettingsFile(settingsXml);
       }
-      invoker.execute(request);
-      FileUtil.copy(
-      FileUtil.newFile(dirPath + File.separator + "target" + File.separator + fileNamePrefix + packageType.getSuffix()),
-      FileUtil.newFile(resultFilePath),
-      true);
+      InvocationResult execute = invoker.execute(request);
+      if (execute.getExitCode() == 0) {
+        FileUtil.copy(
+        FileUtil.newFile(dirPath + File.separator + "target" + File.separator + fileNamePrefix + packageType.getSuffix()),
+        FileUtil.newFile(resultFilePath),
+        true);
+        log.info("完成打包：" + packageType.getName());
+      } else {
+        log.error("打包失败：" + packageType.getName());
+      }
     } else {
       ZipUtil.zip(dirPath, resultFilePath, false);
-
+      log.info("完成打包：" + packageType.getName());
     }
     FileUtil.del(dirPath);
-    log.info("完成打包：" + packageType.getName());
     return FileUtil.newFile(resultFilePath);
   }
 
@@ -173,7 +182,7 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
     }
   }
 
-  private void generateCode(JavaGeneratorParam param) throws MavenInvocationException {
+  private void generateCode(JavaGeneratorParam param) throws Exception {
     Invoker invoker = new DefaultInvoker();
     invoker.setMavenHome(FileUtil.newFile(mavenHome));
 
@@ -187,7 +196,11 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
     if (settingsXml.exists()) {
       request.setUserSettingsFile(settingsXml);
     }
-    invoker.execute(request);
+    InvocationResult execute = invoker.execute(request);
+
+    if (execute.getExitCode() != 0) {
+      throw new Exception("generateCode===>失败");
+    }
 
     //删除多余文件和文件夹
     FileUtil.del(param.output + File.separator + "api");
