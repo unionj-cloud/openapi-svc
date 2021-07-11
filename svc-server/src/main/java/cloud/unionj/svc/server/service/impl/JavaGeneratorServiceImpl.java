@@ -74,9 +74,9 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
       }
 
       File result = ZipUtil.zip(
-          FileUtil.newFile(outputRoot + File.separator + generatorParam.getFileNamePrefix() + "-" + nowTimeStr + ".zip"),
-          false,
-          resultFilePathList.toArray(new File[resultFilePathList.size()])
+      FileUtil.newFile(outputRoot + File.separator + generatorParam.getFileNamePrefix() + "-" + nowTimeStr + ".zip"),
+      false,
+      resultFilePathList.toArray(new File[resultFilePathList.size()])
       );
       return result;
     } catch (Exception e) {
@@ -130,11 +130,15 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
       request.setPomFile(new File(dirPath + File.separator + "pom.xml"));
       request.setGoals(Collections.singletonList(packageType.getMvnGoal()));
       request.setQuiet(true);
+      File settingsXml = new File(output + File.separator + "settings.xml");
+      if (settingsXml.exists()) {
+        request.setUserSettingsFile(settingsXml);
+      }
       invoker.execute(request);
       FileUtil.copy(
-          FileUtil.newFile(dirPath + File.separator + "target" + File.separator + fileNamePrefix + packageType.getSuffix()),
-          FileUtil.newFile(resultFilePath),
-          true);
+      FileUtil.newFile(dirPath + File.separator + "target" + File.separator + fileNamePrefix + packageType.getSuffix()),
+      FileUtil.newFile(resultFilePath),
+      true);
     } else {
       ZipUtil.zip(dirPath, resultFilePath, false);
 
@@ -178,6 +182,11 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
     request.setPomFile(new File(outputGeneratorPom));
     request.setQuiet(true);
     request.setGoals(Collections.singletonList("compile"));
+
+    File settingsXml = new File(param.output + File.separator + "settings.xml");
+    if (settingsXml.exists()) {
+      request.setUserSettingsFile(settingsXml);
+    }
     invoker.execute(request);
 
     //删除多余文件和文件夹
@@ -193,10 +202,10 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
     //删除原有的由openapi-generator提供的公共代码
     File outputJavaDir = FileUtil.newFile(param.output + (".src.main.java." + param.invokerPackage).replace(".", File.separator));
     List<String> remainFileList = Lists.newArrayList(
-        param.apiPackage.substring(param.apiPackage.lastIndexOf(".") + 1),
-        param.modelPackage.substring(param.modelPackage.lastIndexOf(".") + 1),
-        "CollectionFormats.java",
-        "StringUtil.java"
+    param.apiPackage.substring(param.apiPackage.lastIndexOf(".") + 1),
+    param.modelPackage.substring(param.modelPackage.lastIndexOf(".") + 1),
+    "CollectionFormats.java",
+    "StringUtil.java"
     );
     if (outputJavaDir.exists() && outputJavaDir.isDirectory()) {
       for (File sub : outputJavaDir.listFiles()) {
@@ -235,7 +244,7 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
   }
 
   private String fillGeneratorPom(String inputSpec, String output, String invokerPackage, String apiPackage, String
-      modelPackage) {
+  modelPackage) {
     String outputGeneratorPomTemplate = output + File.separator + generatorPomTemplateName;
     Document document = XmlUtil.readXML(outputGeneratorPomTemplate);
     Node inputSpecNode = document.getElementsByTagName("generator.inputSpec").item(0);
