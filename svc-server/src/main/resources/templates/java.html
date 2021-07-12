@@ -159,7 +159,7 @@
       }
     }
 
-    var myDropzone = new Dropzone("#my-dropzone", { url: "/java/upload"});
+    var myDropzone = new Dropzone("#my-dropzone", { url: "/java/upload", timeout: 600000});
     myDropzone.on("sending", function (file, xhr, formData) {
       xhr.responseType = "blob"
       xhr.onreadystatechange = hand;
