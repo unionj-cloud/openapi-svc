@@ -20,6 +20,7 @@
         <generator.invokerPackage>cloud.unionj.generator</generator.invokerPackage>
         <generator.apiPackage>cloud.unionj.generator.client</generator.apiPackage>
         <generator.modelPackage>cloud.unionj.generator.vo</generator.modelPackage>
+        <generator.classifyApiByUrl>true</generator.classifyApiByUrl>
         <generator.configOptions.dateLibrary>java8</generator.configOptions.dateLibrary>
         <generator.globalProperties.modelDocs>false</generator.globalProperties.modelDocs>
     </properties>
@@ -113,6 +114,7 @@
                             <invokerPackage>${generator.invokerPackage}</invokerPackage>
                             <apiPackage>${generator.apiPackage}</apiPackage>
                             <modelPackage>${generator.modelPackage}</modelPackage>
+                            <classifyApiByUrl>${generator.classifyApiByUrl}</classifyApiByUrl>
                             <configOptions>
                                 <dateLibrary>${generator.configOptions.dateLibrary}</dateLibrary>
                             </configOptions>
