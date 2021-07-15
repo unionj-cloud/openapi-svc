@@ -20,6 +20,7 @@
         <generator.invokerPackage>cloud.unionj.generator</generator.invokerPackage>
         <generator.apiPackage>cloud.unionj.generator.client</generator.apiPackage>
         <generator.modelPackage>cloud.unionj.generator.vo</generator.modelPackage>
+        <generator.classifyApiByUrl>true</generator.classifyApiByUrl>
         <generator.configOptions.dateLibrary>java8</generator.configOptions.dateLibrary>
         <generator.globalProperties.modelDocs>false</generator.globalProperties.modelDocs>
     </properties>
@@ -60,7 +61,25 @@
             <artifactId>org.apache.oltu.oauth2.client</artifactId>
             <version>1.0.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.openapitools</groupId>
+            <artifactId>openapi-generator-maven-plugin</artifactId>
+            <version>5.2.0-SVC-SNAPSHOT</version>
+        </dependency>
     </dependencies>
+
+    <!--to download the dependency —— openapi generator of svc  -->
+    <pluginRepositories>
+        <pluginRepository>
+            <id>rdc-releases</id>
+            <url>https://repo.rdc.aliyun.com/repository/10936-release-Gqshiv/</url>
+        </pluginRepository>
+        <pluginRepository>
+            <id>rdc-snapshots</id>
+            <url>https://repo.rdc.aliyun.com/repository/10936-snapshot-LD80Hq/</url>
+        </pluginRepository>
+    </pluginRepositories>
+
 
     <build>
         <plugins>
@@ -78,9 +97,7 @@
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
-                <!-- RELEASE_VERSION -->
-                <version>5.1.0</version>
-                <!-- /RELEASE_VERSION -->
+                <version>5.2.0-SVC</version>
                 <executions>
                     <execution>
                         <goals>
@@ -97,6 +114,7 @@
                             <invokerPackage>${generator.invokerPackage}</invokerPackage>
                             <apiPackage>${generator.apiPackage}</apiPackage>
                             <modelPackage>${generator.modelPackage}</modelPackage>
+                            <classifyApiByUrl>${generator.classifyApiByUrl}</classifyApiByUrl>
                             <configOptions>
                                 <dateLibrary>${generator.configOptions.dateLibrary}</dateLibrary>
                             </configOptions>
