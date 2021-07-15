@@ -39,12 +39,8 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
   private String tempRoot;
   @Value("${maven.home}")
   private String mavenHome;
-  @Value("${svc.java.packageType:zip}")
-  private String packageType;
   @Value("${generator.source.dir:}")
   private String generatorSourceDir;
-  @Value("${svc-client-java.version:}")
-  private String svcClientJavaVersion;
 
 
   @Override
@@ -83,9 +79,9 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
       }
 
       File result = ZipUtil.zip(
-          FileUtil.newFile(outputRoot + File.separator + generatorParam.getFileNamePrefix() + "-" + nowTimeStr + ".zip"),
-          false,
-          resultFilePathList.toArray(new File[resultFilePathList.size()])
+      FileUtil.newFile(outputRoot + File.separator + generatorParam.getFileNamePrefix() + "-" + nowTimeStr + ".zip"),
+      false,
+      resultFilePathList.toArray(new File[resultFilePathList.size()])
       );
       return result;
     } catch (Exception e) {
@@ -131,7 +127,6 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
 
     copyFiles(output, dirPath, null, packageType.getIncludePrefixes(), packageType.getExcludePrefixes());
 
-    FileUtil.mkdir(output);
     String resultFilePath = output + File.separator + fileNamePrefix + (StrUtil.isNotEmpty(packageType.getInfix()) ? packageType.getInfix() : "") + packageType.getSuffix();
     if (packageType.isMavenInvoker()) {
       Invoker invoker = new DefaultInvoker();
@@ -139,18 +134,26 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
       InvocationRequest request = new DefaultInvocationRequest();
       request.setPomFile(new File(dirPath + File.separator + "pom.xml"));
       request.setGoals(Collections.singletonList(packageType.getMvnGoal()));
-      invoker.execute(request);
-      FileUtil.mkdir(dirPath + File.separator + "target");
-      FileUtil.copy(
-          FileUtil.newFile(dirPath + File.separator + "target" + File.separator + fileNamePrefix + packageType.getSuffix()),
-          FileUtil.newFile(resultFilePath),
-          true);
+      request.setQuiet(true);
+      File settingsXml = new File(output + File.separator + "settings.xml");
+      if (settingsXml.exists()) {
+        request.setUserSettingsFile(settingsXml);
+      }
+      InvocationResult execute = invoker.execute(request);
+      if (execute.getExitCode() == 0) {
+        FileUtil.copy(
+        FileUtil.newFile(dirPath + File.separator + "target" + File.separator + fileNamePrefix + packageType.getSuffix()),
+        FileUtil.newFile(resultFilePath),
+        true);
+        log.info("完成打包：" + packageType.getName());
+      } else {
+        log.error("打包失败：" + packageType.getName());
+      }
     } else {
       ZipUtil.zip(dirPath, resultFilePath, false);
-
+      log.info("完成打包：" + packageType.getName());
     }
     FileUtil.del(dirPath);
-    log.info("完成打包：" + packageType.getName());
     return FileUtil.newFile(resultFilePath);
   }
 
@@ -179,15 +182,25 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
     }
   }
 
-  private void generateCode(JavaGeneratorParam param) throws MavenInvocationException {
+  private void generateCode(JavaGeneratorParam param) throws Exception {
     Invoker invoker = new DefaultInvoker();
     invoker.setMavenHome(FileUtil.newFile(mavenHome));
 
     String outputGeneratorPom = fillGeneratorPom(param.openapiFilePath, param.output, param.invokerPackage, param.apiPackage, param.modelPackage);
     InvocationRequest request = new DefaultInvocationRequest();
     request.setPomFile(new File(outputGeneratorPom));
+    request.setQuiet(true);
     request.setGoals(Collections.singletonList("compile"));
-    invoker.execute(request);
+
+    File settingsXml = new File(param.output + File.separator + "settings.xml");
+    if (settingsXml.exists()) {
+      request.setUserSettingsFile(settingsXml);
+    }
+    InvocationResult execute = invoker.execute(request);
+
+    if (execute.getExitCode() != 0) {
+      throw new Exception("generateCode===>失败");
+    }
 
     //删除多余文件和文件夹
     FileUtil.del(param.output + File.separator + "api");
@@ -202,10 +215,10 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
     //删除原有的由openapi-generator提供的公共代码
     File outputJavaDir = FileUtil.newFile(param.output + (".src.main.java." + param.invokerPackage).replace(".", File.separator));
     List<String> remainFileList = Lists.newArrayList(
-        param.apiPackage.substring(param.apiPackage.lastIndexOf(".") + 1),
-        param.modelPackage.substring(param.modelPackage.lastIndexOf(".") + 1),
-        "CollectionFormats.java",
-        "StringUtil.java"
+    param.apiPackage.substring(param.apiPackage.lastIndexOf(".") + 1),
+    param.modelPackage.substring(param.modelPackage.lastIndexOf(".") + 1),
+    "CollectionFormats.java",
+    "StringUtil.java"
     );
     if (outputJavaDir.exists() && outputJavaDir.isDirectory()) {
       for (File sub : outputJavaDir.listFiles()) {
@@ -237,10 +250,6 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
     versionNode.setTextContent(version);
     Node nameNode = document.getElementsByTagName("name").item(0);
     nameNode.setTextContent(name);
-    if (StrUtil.isNotEmpty(svcClientJavaVersion)) {
-      Node inputSpecNode = document.getElementsByTagName("svc-client-java.version").item(0);
-      inputSpecNode.setTextContent(svcClientJavaVersion);
-    }
     String outputPom = output + File.separator + "pom.xml";
     XmlUtil.toFile(document, outputPom);
     FileUtil.del(outputPomTemplate);
@@ -248,7 +257,7 @@ public class JavaGeneratorServiceImpl implements JavaGeneratorService {
   }
 
   private String fillGeneratorPom(String inputSpec, String output, String invokerPackage, String apiPackage, String
-      modelPackage) {
+  modelPackage) {
     String outputGeneratorPomTemplate = output + File.separator + generatorPomTemplateName;
     Document document = XmlUtil.readXML(outputGeneratorPomTemplate);
     Node inputSpecNode = document.getElementsByTagName("generator.inputSpec").item(0);
