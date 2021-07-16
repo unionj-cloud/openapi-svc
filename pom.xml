@@ -50,15 +50,4 @@
       <version>5.5.9</version>
     </dependency>
   </dependencies>
-
-  <distributionManagement>
-    <repository>
-      <id>rdc-releases</id>
-      <url>https://repo.rdc.aliyun.com/repository/10936-release-Gqshiv/</url>
-    </repository>
-    <snapshotRepository>
-      <id>rdc-snapshots</id>
-      <url>https://repo.rdc.aliyun.com/repository/10936-snapshot-LD80Hq/</url>
-    </snapshotRepository>
-  </distributionManagement>
 </project>
