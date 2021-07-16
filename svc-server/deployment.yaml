@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openapi-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openapi
+  template:
+    metadata:
+      labels:
+        app: openapi
+    spec:
+      containers:
+      - image: openapi-svc:latest
+        imagePullPolicy: Always
+        name: openapi
+        ports:
+        - containerPort: 8080
+          name: http-port
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        env:
+          - name: SPRING_PROFILES_ACTIVE
+            value: test
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openapi-service
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Cluster
+  selector:
+    app: openapi
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: openapi-ingress
+spec:
+  rules:
+    - host: RLACE_WITH_YOUR_OWN_HOST
+      http:
+        paths:
+          - path: /openapi-server
+            pathType: Prefix
+            backend:
+              service:
+                name: openapi-service
+                port:
+                  number: 8080

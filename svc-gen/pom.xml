@@ -13,7 +13,7 @@
   <packaging>pom</packaging>
 
   <properties>
-    <unionj-generator.version>1.7-SNAPSHOT</unionj-generator.version>
+    <unionj-generator.version>1.6.0</unionj-generator.version>
   </properties>
 
   <dependencyManagement>
