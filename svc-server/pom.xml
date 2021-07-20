@@ -13,6 +13,7 @@
     <name>svc-server</name>
     <description>Demo project for Spring Boot</description>
     <properties>
+        <unionj-generator.version>1.6.1</unionj-generator.version>
         <java.version>1.8</java.version>
     </properties>
     <dependencies>
@@ -41,7 +42,7 @@
         <dependency>
             <groupId>cloud.unionj</groupId>
             <artifactId>unionj-generator-frontend</artifactId>
-            <version>1.7-SNAPSHOT</version>
+            <version>${unionj-generator.version}</version>
             <scope>compile</scope>
         </dependency>
 
