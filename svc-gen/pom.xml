@@ -13,18 +13,18 @@
   <packaging>pom</packaging>
 
   <properties>
-    <unionj-generator.version>1.6.1</unionj-generator.version>
+    <unionj-generator.version>1.6.6.1</unionj-generator.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>cloud.unionj</groupId>
+        <groupId>io.github.unionj-cloud</groupId>
         <artifactId>unionj-generator-frontend</artifactId>
         <version>${unionj-generator.version}</version>
       </dependency>
       <dependency>
-        <groupId>cloud.unionj</groupId>
+        <groupId>io.github.unionj-cloud</groupId>
         <artifactId>unionj-generator-backend</artifactId>
         <version>${unionj-generator.version}</version>
       </dependency>

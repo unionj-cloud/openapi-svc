@@ -23,7 +23,7 @@
     </dependency>
 
     <dependency>
-      <groupId>cloud.unionj</groupId>
+      <groupId>io.github.unionj-cloud</groupId>
       <artifactId>unionj-generator-backend</artifactId>
     </dependency>
   </dependencies>

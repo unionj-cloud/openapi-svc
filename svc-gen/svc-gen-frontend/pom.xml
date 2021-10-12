@@ -19,7 +19,7 @@
       <version>0.0.1-SNAPSHOT</version>
     </dependency>
     <dependency>
-      <groupId>cloud.unionj</groupId>
+      <groupId>io.github.unionj-cloud</groupId>
       <artifactId>unionj-generator-frontend</artifactId>
     </dependency>
   </dependencies>
