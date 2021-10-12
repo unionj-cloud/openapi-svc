@@ -3,7 +3,6 @@ package gen;
 import cloud.unionj.generator.backend.docparser.BackendDocParser;
 import cloud.unionj.generator.backend.docparser.entity.Backend;
 import cloud.unionj.generator.backend.springboot.OutputConfig;
-import cloud.unionj.generator.backend.springboot.OutputType;
 import cloud.unionj.generator.backend.springboot.SpringbootFolderGenerator;
 import cloud.unionj.generator.openapi3.model.Openapi3;
 import org.slf4j.Logger;
@@ -59,7 +58,6 @@ public class BackendGenApplication implements CommandLineRunner {
         .pomParentVersion("0.0.1-SNAPSHOT")
         .pomProtoArtifactId("svc-proto")
         .pomVoArtifactId("svc-vo")
-        .outputType(OutputType.OVERWRITE)
         .build();
     springbootFolderGenerator.generate();
   }
