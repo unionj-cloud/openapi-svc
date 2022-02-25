@@ -13,7 +13,7 @@
     <name>svc-server</name>
     <description>Demo project for Spring Boot</description>
     <properties>
-        <unionj-generator.version>1.6.6.1</unionj-generator.version>
+        <unionj-generator.version>1.6.7-SNAPSHOT</unionj-generator.version>
         <java.version>1.8</java.version>
     </properties>
     <dependencies>
